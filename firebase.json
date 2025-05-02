@@ -1,0 +1,17 @@
+{
+  "hosting": {
+    "public": "build/web",
+    "site": "flexion-infotech-resume-creator",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ],
+    "rewrites": [
+      {
+        "source": "**",
+        "destination": "/index.html"
+      }
+    ]
+  }
+}
