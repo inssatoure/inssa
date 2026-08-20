@@ -5,9 +5,31 @@ Goal: build an open dataset + visualization of every village in Senegal
 public-interest resource (heritage, linguistics, planning). Not started
 building yet — plan only, agreed with user (diguifils@gmail.com).
 
-## Status
-- Phase: 0 (not started)
-- No code written yet in this repo for this mission.
+## Status (updated 2026-08-20)
+- Phase 0: DONE. Data lives in `data/senegal-villages/`.
+  - Source: GeoNames SN dump (download.geonames.org/export/dump/SN.zip) —
+    fast/reliable in this sandbox. **OSM Overpass API is NOT reachable**
+    from this environment: overpass-api.de gets TLS reset, and every
+    public mirror tried (overpass.osm.ch, .fr, .kumi.systems,
+    .private.coffee, .monicz.dev) is either regional-only, returns 500,
+    or the proxy throttles the POST body to ~1 byte/sec (unusable). Do
+    not re-attempt Overpass without checking network policy first — it
+    burned real time this session. GeoNames + ANSD are the way forward.
+  - `villages.sqlite`: 11,789 populated places (feature_class=P),
+    11,568 of them `PPL` (village/settlement). Full SN.txt had 14,523
+    rows total (rest are hydro/terrain features, not places).
+  - `senegal_villages.csv`: flat export of the same, sorted by name.
+  - First-pass `lang_guess`/`name_root` tagging done on ~2,100 names via
+    coarse prefix regex (Wolof/Pulaar/Serer/Jola/Mandinka clan- and
+    toponym-roots). This is a rough v1, not linguistically rigorous —
+    needs review by someone who knows the languages, and coverage is
+    only ~18% of rows so far.
+- Phase 1 (enrichment): partially started (language tagging above).
+  Dedup, better name-pattern clustering, "interesting name" flagging:
+  not started.
+- Phase 2 (visualization/map, word-cloud, searchable table): not started.
+- Phase 3 (validation against ANSD/IGN): not started. ANSD source URL
+  not yet found/verified.
 
 ## Plan (phases, do in order, each independently shippable)
 
@@ -54,6 +76,19 @@ Iterative loop, one phase-step per iteration, sanity-check before next:
   workspace — don't touch app code.
 - User wants token-conscious execution: do one phase per turn, report
   concrete numbers/results, don't re-explain the plan each time (link
-  back to this file instead).
-- Next concrete action: run Overpass query for Senegal villages, load
-  into `data/senegal-villages/villages.sqlite`, report row count.
+  back to this file instead). User said "go in full mode, don't stop to
+  ask questions, trust the loop" — proceed autonomously through phases.
+- `data/senegal-villages/geonames_raw/` kept (source txt) for
+  re-processing; sn_geonames.zip and overpass experiment scratch files
+  were deleted after use — don't bother re-fetching overpass.
+- Next concrete actions, in order:
+  1. Improve lang_guess/name_root regex coverage (currently ~18%) —
+     expand root dictionary, ideally with a real Wolof/Pulaar/Serer
+     lexicon rather than more regex guessing.
+  2. Dedup pass: many names repeat across admin1/admin2 (e.g. multiple
+     "Keur Ndiaye" in different regions) — group and flag rather than
+     merge (they're legitimately different places).
+  3. Try ANSD (Senegal statistics office) for an official village
+     gazetteer/population figures to cross-validate GeoNames.
+  4. Build the map/visualization artifact once data quality is judged
+     good enough — don't build it on unreviewed v1 tagging.
