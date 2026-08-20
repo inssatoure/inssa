@@ -55,6 +55,22 @@ building yet — plan only, agreed with user (diguifils@gmail.com).
     manual lat/lon→3D→screen projection with drag-to-rotate,
     scroll-to-zoom, hover tooltip, click-to-open-Maps. Opens already
     facing Senegal.
+  - v0.3: real region names (14 official Senegal regions, from GeoNames
+    `admin1CodesASCII.txt` — was previously showing raw numeric admin1
+    codes like "07", now "Thies" etc). Department names added from
+    GeoNames `admin2Codes.txt`, but **only ~18% of rows have a
+    department in the source data** (2,154/11,789) — the rest show
+    "non recensé dans la source" rather than a guess; do not silently
+    interpolate/fake department for the rest. Clicking a point (flat
+    map, globe, or a search-table row) now opens an in-page details
+    panel with name/region/department/coords/language root/population/
+    duplicate-count, plus a button to open that exact point in Google
+    Maps — replaces the earlier behavior of clicking = immediately
+    opening a new tab. `admin1CodesASCII.txt` and `admin2Codes.txt` are
+    kept in `data/senegal-villages/` as the source-of-truth mapping
+    tables; `villages.sqlite` has `region_name`/`department_name`
+    columns now, `senegal_villages.csv` and `dashboard_data.json`
+    regenerated to match.
 - Phase 3 (validation against ANSD/IGN): started, blocked on network.
   - `https://www.ansd.sn` IS reachable from this sandbox but only with
     `curl -k` (their TLS cert doesn't chain to a public root the

@@ -1,0 +1,14 @@
+SN.12	Ziguinchor	Ziguinchor	2243939
+SN.07	Thies	Thies	2244800
+SN.05	Tambacounda	Tambacounda	2244990
+SN.14	Saint-Louis	Saint-Louis	2246451
+SN.15	Matam	Matam	2248753
+SN.13	Louga	Louga	2249221
+SN.11	Kolda	Kolda	2249781
+SN.10	Kaolack	Kaolack	2250804
+SN.09	Fatick	Fatick	2251910
+SN.03	Diourbel Region	Diourbel Region	2252308
+SN.01	Dakar	Dakar	2253350
+SN.16	Kaffrine	Kaffrine	7303935
+SN.17	Kedougou	Kedougou	7303936
+SN.18	Sédhiou	Sedhiou	7303937
