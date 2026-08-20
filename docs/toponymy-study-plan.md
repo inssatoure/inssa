@@ -173,3 +173,49 @@ come from" answered from the map.
 4. Rebuild the map as Senegal-only with per-finding layers.
 5. Build the morpheme network graph.
 6. Write the findings page; publish dataset + study together.
+
+---
+
+# BUILT — 2026-08-20
+
+All six findings computed and published. Study:
+https://claude.ai/code/artifact/0ec3e658-6334-4b3c-bfee-8637e641fe57
+(Original village dashboard, still live:
+https://claude.ai/code/artifact/1be529d5-e457-4fda-b9f3-ab61532cf369)
+
+See `data/senegal-villages/README.md` for the file map and how to rerun.
+
+## Results as built
+- F1 ethnic twins: **64 groups, 7 triplets, median 1.55 km**, 45 under 2 km.
+- F2 frontier: Keur (Wolof, 1037) vs Saré (Pulaar, 422), centroids ~180 km apart.
+- F3 Pulaar splits **five ways**: Saré (south) / Sinthiou / Ouro / Gourel
+  (east) / Loumbel + Belel (north Ferlo). Stronger than the 3-way split
+  predicted in the plan.
+- F4 Sufi gradient from Touba: **15.0% → 8.7% → 5.8% → 5.2%** over the first
+  100 km. Clean monotonic decay in the core; noisy past ~150 km.
+- F5 fission: 67 numbered splits, median **1.73 km** — nearly identical to F1's
+  1.55 km despite an unrelated mechanism. Worth writing up on its own.
+- F6 lineages: 618 villages, 60+ surnames with centroids and heartlands.
+- Ecology probe: only 126 villages tagged. Published as hypothesis only —
+  needs a land-cover raster to test, which was unreachable.
+
+## Environment notes for the next agent
+- **Overpass/OSM: still unreachable.** Don't retry.
+- **GitHub raw is proxy-blocked**, but git-LFS files fetch fine from
+  `media.githubusercontent.com/media/<owner>/<repo>/<sha>/<path>` — that is
+  how the geoBoundaries polygons were obtained. jsDelivr returns the LFS
+  pointer, not the content.
+- **www.ansd.sn needs `curl -k`** (their cert doesn't chain). Their CSV export
+  endpoint still times out unfiltered; try per-region query params.
+- Playwright: use `executablePath:'/opt/pw-browsers/chromium-1194/chrome-linux/chrome'`.
+  Google Fonts fails to load in the sandbox browser — harmless, works published.
+
+## Highest-value next steps
+1. **ANSD cross-validation** — still the single biggest credibility gap.
+2. **Lexicon review by actual speakers.** ~29% of names carry a recognised
+   element; the rest are unclassified. Every gloss is the author's own.
+   Expanding and correcting `SETTLEMENT`/`ECOLOGY`/`PATRONYMS` in analyze.py
+   is the highest-leverage work left.
+3. **F5 vs F1 spacing** — why do two unrelated mechanisms produce the same
+   ~1.6 km village spacing? That looks like a real question worth a paper.
+4. Land-cover raster for the ecology thread.
