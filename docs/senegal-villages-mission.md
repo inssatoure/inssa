@@ -33,7 +33,19 @@ building yet — plan only, agreed with user (diguifils@gmail.com).
     out of 11,789 rows. Not merged/removed — kept as-is with the count
     so downstream analysis can decide.
   - Name-pattern clustering, "interesting name" flagging: not started.
-- Phase 2 (visualization/map, word-cloud, searchable table): not started.
+- Phase 2 (visualization): first version DONE.
+  - `data/senegal-villages/dashboard.html` — self-contained dashboard
+    (all 11,789 points inlined as JSON, no external fetch): canvas
+    scatter map colored by region, language-root bar chart, top-reused
+    names table, full searchable table.
+  - `dashboard_data.json` — the underlying export used to build it, kept
+    for regenerating the dashboard after future data updates (see
+    `dashboard.html`'s embedded `<script id="village-data">` — that's
+    what actually renders, regenerate it from `dashboard_data.json` by
+    re-running the inline-patch step, don't hand-edit the JSON blob
+    inside the HTML).
+  - Published as Artifact: https://claude.ai/code/artifact/1be529d5-e457-4fda-b9f3-ab61532cf369
+    (private, owned by this session's user).
 - Phase 3 (validation against ANSD/IGN): not started. ANSD source URL
   not yet found/verified.
 
@@ -88,13 +100,25 @@ Iterative loop, one phase-step per iteration, sanity-check before next:
   re-processing; sn_geonames.zip and overpass experiment scratch files
   were deleted after use — don't bother re-fetching overpass.
 - Next concrete actions, in order:
-  1. Improve lang_guess/name_root regex coverage (currently ~18%) —
-     expand root dictionary, ideally with a real Wolof/Pulaar/Serer
-     lexicon rather than more regex guessing.
-  2. Dedup pass: many names repeat across admin1/admin2 (e.g. multiple
-     "Keur Ndiaye" in different regions) — group and flag rather than
-     merge (they're legitimately different places).
-  3. Try ANSD (Senegal statistics office) for an official village
-     gazetteer/population figures to cross-validate GeoNames.
-  4. Build the map/visualization artifact once data quality is judged
-     good enough — don't build it on unreviewed v1 tagging.
+  1. Language tagging is at ~32% coverage now (up from 18%) using
+     frequency-driven prefix mining (looked at most common untagged
+     first-tokens, added regex for the top ~30). Repeat this technique
+     again — re-run the "most common untagged first token" query in
+     the mission doc's Phase 1 code, it still surfaces more.
+  2. Try ANSD (Senegal statistics office) for an official village
+     gazetteer/population figures to cross-validate GeoNames. Not yet
+     attempted — worth checking if it's a reachable/downloadable URL
+     from this sandbox (GeoNames and nominatim.openstreetmap.org were
+     fine; many other hosts are throttled/blocked, test before relying
+     on it).
+  3. Dashboard v1 exists but is unreviewed — population field is 0 for
+     most rows (GeoNames doesn't have village-level population for
+     Senegal, only bigger towns), so the "Pop." column in the search
+     table is mostly empty. Worth deciding whether to hide it or find a
+     population source.
+  4. Re-publish the Artifact after any data update: edit
+     `dashboard_data.json`-generation script in mission doc history (see
+     git log for the python heredocs used), regenerate
+     `dashboard_data.json`, re-inline into `dashboard.html`, then call
+     Artifact publish again with the same file_path — it updates the
+     same URL in-session, or pass `url` if starting a new session.
