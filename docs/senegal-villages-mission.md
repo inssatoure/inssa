@@ -46,6 +46,15 @@ building yet — plan only, agreed with user (diguifils@gmail.com).
     inside the HTML).
   - Published as Artifact: https://claude.ai/code/artifact/1be529d5-e457-4fda-b9f3-ab61532cf369
     (private, owned by this session's user).
+  - v0.2: every village name is now a clickable link to
+    `https://www.google.com/maps/search/?api=1&query=lat,lon` (opens
+    the exact point in Google Maps) — in both the search table and by
+    clicking a point on the flat map. Added a second visualization: a
+    hand-rolled 3D rotating globe ("the orb") in `#orbCanvas` — no
+    Three.js/CDN (CSP blocks external scripts), just canvas 2D +
+    manual lat/lon→3D→screen projection with drag-to-rotate,
+    scroll-to-zoom, hover tooltip, click-to-open-Maps. Opens already
+    facing Senegal.
 - Phase 3 (validation against ANSD/IGN): started, blocked on network.
   - `https://www.ansd.sn` IS reachable from this sandbox but only with
     `curl -k` (their TLS cert doesn't chain to a public root the

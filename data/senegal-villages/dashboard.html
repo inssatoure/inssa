@@ -215,6 +215,35 @@
   }
   footer a{color:var(--indigo);}
   .full-width{grid-column:1 / -1;}
+
+  .orb-stage{position:relative;}
+  #orbCanvas{
+    width:100%;
+    height:auto;
+    display:block;
+    border-radius:10px;
+    background: radial-gradient(circle at 32% 28%, var(--paper-raised), var(--ink) 145%);
+    cursor:grab;
+    touch-action:none;
+  }
+  #orbCanvas:active{cursor:grabbing;}
+  .orb-tooltip{
+    position:absolute;
+    pointer-events:none;
+    background:var(--ink);
+    color:var(--paper);
+    font-family:'IBM Plex Mono', monospace;
+    font-size:0.74rem;
+    padding:0.3rem 0.55rem;
+    border-radius:6px;
+    transform:translate(-50%,-130%);
+    white-space:nowrap;
+    opacity:0;
+    transition:opacity 0.1s;
+    z-index:2;
+  }
+  .place-link{color:inherit;text-decoration:none;border-bottom:1px dotted var(--indigo);}
+  .place-link:hover{color:var(--indigo);}
 </style>
 
 <div class="wrap">
@@ -251,6 +280,15 @@
       </div>
     </div>
 
+    <div class="panel full-width" id="orbPanel">
+      <h2>The orb</h2>
+      <p class="sub">Senegal's villages, plotted on a rotating globe rather than a flat map. Drag to spin, scroll to zoom, click a point to open it in Google Maps.</p>
+      <div class="orb-stage">
+        <canvas id="orbCanvas" width="1000" height="640"></canvas>
+        <div class="orb-tooltip" id="orbTooltip"></div>
+      </div>
+    </div>
+
     <div class="panel full-width">
       <h2>Search all 11,789 places</h2>
       <p class="sub">By name, region code, or tagged language root.</p>
@@ -273,6 +311,10 @@
 <script>
 const DASHBOARD_DATA = JSON.parse(document.getElementById('village-data').textContent);
 init(DASHBOARD_DATA);
+
+function mapsUrl(lat, lon){
+  return `https://www.google.com/maps/search/?api=1&query=${lat},${lon}`;
+}
 
 function init(data){
   const points = data.points; // [name, lat, lon, admin1, pop, lang, dupe]
@@ -317,6 +359,20 @@ function init(data){
   });
   ctx.globalAlpha = 1;
 
+  canvas.style.cursor = 'pointer';
+  canvas.addEventListener('click', e=>{
+    const rect = canvas.getBoundingClientRect();
+    const mx = (e.clientX-rect.left) * (W/rect.width);
+    const my = (e.clientY-rect.top) * (H/rect.height);
+    let best=null, bestD=14*14;
+    points.forEach(p=>{
+      const [x,y] = project(p[1],p[2]);
+      const d = (x-mx)*(x-mx)+(y-my)*(y-my);
+      if(d<bestD){ bestD=d; best=p; }
+    });
+    if(best) window.open(mapsUrl(best[1],best[2]), '_blank');
+  });
+
   const legend = document.getElementById('legend');
   legend.innerHTML = regionList.map(r=>`<span><span class="swatch" style="background:${colorMap[r]}"></span>region ${r} (${data.region_counts[r]})</span>`).join('');
 
@@ -339,7 +395,7 @@ function init(data){
   const searchRows = document.getElementById('searchRows');
   function render(list){
     searchRows.innerHTML = list.slice(0,300).map(p=>
-      `<tr><td>${p[0]}</td><td>${p[3]}</td><td class="n-cell">${p[4]||''}</td><td>${p[5]?`<span class="tag">${p[5]}</span>`:''}</td></tr>`
+      `<tr><td><a class="place-link" href="${mapsUrl(p[1],p[2])}" target="_blank" rel="noopener">${p[0]}</a></td><td>${p[3]}</td><td class="n-cell">${p[4]||''}</td><td>${p[5]?`<span class="tag">${p[5]}</span>`:''}</td></tr>`
     ).join('');
   }
   render(points.slice(0,300));
@@ -349,5 +405,137 @@ function init(data){
     const filtered = points.filter(p => (p[0]||'').toLowerCase().includes(q) || (p[3]||'').toLowerCase().includes(q) || (p[5]||'').toLowerCase().includes(q));
     render(filtered);
   });
+
+  initOrb(points, colorMap);
+}
+
+function initOrb(points, colorMap){
+  const canvas = document.getElementById('orbCanvas');
+  const tooltip = document.getElementById('orbTooltip');
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  const cx = W/2, cy = H/2;
+
+  // Senegal's bounding center, so the globe opens already facing the country.
+  const centerLat = 14.4, centerLon = -14.5;
+  let yaw = -centerLon * Math.PI/180;
+  let pitch = centerLat * Math.PI/180 * 0.55;
+  let zoom = 6.5; // globe radius as a fraction of canvas half-height, before perspective
+
+  const pts3d = points.map(p=>{
+    const [name, lat, lon] = p;
+    const latR = lat*Math.PI/180, lonR = lon*Math.PI/180;
+    return {
+      p, x: Math.cos(latR)*Math.cos(lonR), y: Math.sin(latR), z: Math.cos(latR)*Math.sin(lonR)
+    };
+  });
+
+  let dragging=false, lastX=0, lastY=0, moved=false;
+  canvas.addEventListener('pointerdown', e=>{
+    dragging=true; moved=false; lastX=e.clientX; lastY=e.clientY;
+    canvas.setPointerCapture(e.pointerId);
+  });
+  canvas.addEventListener('pointermove', e=>{
+    if(dragging){
+      const dx=e.clientX-lastX, dy=e.clientY-lastY;
+      if(Math.abs(dx)+Math.abs(dy) > 2) moved=true;
+      yaw += dx*0.006;
+      pitch = Math.max(-1.5, Math.min(1.5, pitch + dy*0.006));
+      lastX=e.clientX; lastY=e.clientY;
+      draw();
+    } else {
+      hoverPick(e);
+    }
+  });
+  window.addEventListener('pointerup', ()=>dragging=false);
+  canvas.addEventListener('wheel', e=>{
+    e.preventDefault();
+    zoom = Math.max(4.5, Math.min(16, zoom + e.deltaY*0.01));
+    draw();
+  }, {passive:false});
+
+  let lastProjected = [];
+  function project3d(pt){
+    // rotate by yaw around Y axis, then pitch around X axis
+    let {x,y,z} = pt;
+    let x1 = x*Math.cos(yaw) - z*Math.sin(yaw);
+    let z1 = x*Math.sin(yaw) + z*Math.cos(yaw);
+    let y1 = y*Math.cos(pitch) - z1*Math.sin(pitch);
+    let z2 = y*Math.sin(pitch) + z1*Math.cos(pitch);
+    const scale = (H/2) / zoom * 5.6;
+    const persp = 3.4/(3.4 - z2*0.55);
+    return { sx: cx + x1*scale*persp, sy: cy - y1*scale*persp, depth:z2, persp };
+  }
+
+  function draw(){
+    ctx.clearRect(0,0,W,H);
+    const R = (H/2)/zoom*5.6;
+
+    // sphere shading
+    const grad = ctx.createRadialGradient(cx-R*0.28,cy-R*0.32,R*0.1,cx,cy,R*1.05);
+    grad.addColorStop(0, 'rgba(239,232,216,0.16)');
+    grad.addColorStop(1, 'rgba(239,232,216,0)');
+    ctx.fillStyle = grad;
+    ctx.beginPath(); ctx.arc(cx,cy,R*1.02,0,Math.PI*2); ctx.fill();
+    ctx.strokeStyle = 'rgba(239,232,216,0.25)';
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.arc(cx,cy,R,0,Math.PI*2); ctx.stroke();
+
+    lastProjected = pts3d.map(pt=>{
+      const proj = project3d(pt);
+      return { p: pt.p, ...proj };
+    });
+    lastProjected.sort((a,b)=>a.depth-b.depth);
+
+    lastProjected.forEach(d=>{
+      if(d.depth < -0.15) return; // back of the globe, hide
+      const front = (d.depth+1)/2;
+      ctx.globalAlpha = 0.35 + front*0.55;
+      ctx.fillStyle = colorMap[d.p[3]] || '#e0ab52';
+      const r = Math.max(0.9, 1.7*d.persp);
+      ctx.beginPath();
+      ctx.arc(d.sx, d.sy, r, 0, Math.PI*2);
+      ctx.fill();
+    });
+    ctx.globalAlpha = 1;
+  }
+
+  function hoverPick(e){
+    const rect = canvas.getBoundingClientRect();
+    const mx = (e.clientX-rect.left) * (W/rect.width);
+    const my = (e.clientY-rect.top) * (H/rect.height);
+    let best=null, bestD=8*8;
+    for(const d of lastProjected){
+      if(d.depth < -0.15) continue;
+      const dd = (d.sx-mx)*(d.sx-mx)+(d.sy-my)*(d.sy-my);
+      if(dd<bestD){ bestD=dd; best=d; }
+    }
+    if(best){
+      tooltip.textContent = `${best.p[0]} — region ${best.p[3]}`;
+      tooltip.style.left = best.sx + 'px';
+      tooltip.style.top = best.sy + 'px';
+      tooltip.style.opacity = 1;
+      canvas.title = '';
+    } else {
+      tooltip.style.opacity = 0;
+    }
+  }
+
+  canvas.addEventListener('pointerleave', ()=>{ tooltip.style.opacity = 0; });
+  canvas.addEventListener('click', e=>{
+    if(moved) return; // was a drag, not a click
+    const rect = canvas.getBoundingClientRect();
+    const mx = (e.clientX-rect.left) * (W/rect.width);
+    const my = (e.clientY-rect.top) * (H/rect.height);
+    let best=null, bestD=10*10;
+    for(const d of lastProjected){
+      if(d.depth < -0.15) continue;
+      const dd = (d.sx-mx)*(d.sx-mx)+(d.sy-my)*(d.sy-my);
+      if(dd<bestD){ bestD=dd; best=d; }
+    }
+    if(best) window.open(mapsUrl(best.p[1], best.p[2]), '_blank');
+  });
+
+  draw();
 }
 </script>
