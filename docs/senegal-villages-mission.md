@@ -24,9 +24,15 @@ building yet — plan only, agreed with user (diguifils@gmail.com).
     toponym-roots). This is a rough v1, not linguistically rigorous —
     needs review by someone who knows the languages, and coverage is
     only ~18% of rows so far.
-- Phase 1 (enrichment): partially started (language tagging above).
-  Dedup, better name-pattern clustering, "interesting name" flagging:
-  not started.
+- Phase 1 (enrichment): partially started.
+  - Language tagging: ~2,100 rows (~18%), coarse regex, needs review.
+  - Dedup: added `name_dupe_count` column (count of rows sharing exact
+    name nationally). These are legitimate repeats spread across
+    regions, not data errors — e.g. "Ndiayène" appears 21x across 7
+    regions, "Darou Salam" 19x, "Missira" 17x. 10,182 distinct names
+    out of 11,789 rows. Not merged/removed — kept as-is with the count
+    so downstream analysis can decide.
+  - Name-pattern clustering, "interesting name" flagging: not started.
 - Phase 2 (visualization/map, word-cloud, searchable table): not started.
 - Phase 3 (validation against ANSD/IGN): not started. ANSD source URL
   not yet found/verified.
