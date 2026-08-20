@@ -46,8 +46,23 @@ building yet — plan only, agreed with user (diguifils@gmail.com).
     inside the HTML).
   - Published as Artifact: https://claude.ai/code/artifact/1be529d5-e457-4fda-b9f3-ab61532cf369
     (private, owned by this session's user).
-- Phase 3 (validation against ANSD/IGN): not started. ANSD source URL
-  not yet found/verified.
+- Phase 3 (validation against ANSD/IGN): started, blocked on network.
+  - `https://www.ansd.sn` IS reachable from this sandbox but only with
+    `curl -k` (their TLS cert doesn't chain to a public root the
+    sandbox trusts — a real cert issue on their end, not a MITM
+    concern; harmless for reading public census pages, but never send
+    credentials there under `-k`).
+  - Found their 2023 census browser: `/donnees-recensements` and
+    `/recensement/rgph-5-2023`, and a CSV export endpoint
+    `https://www.ansd.sn/data-recensement.csv?page&_format=csv` — but
+    that endpoint timed out after 90s with 0 bytes (likely needs
+    region/département query params to scope the export rather than
+    dumping everything unfiltered; or it's just slow server-side).
+  - Not yet resolved. Next agent: try the CSV export with explicit
+    `field_regions_value=`/`field_departements_value=` params per
+    region (14 regions) instead of one unfiltered pull, or look at
+    `/recensement/rgph-5-2023` page directly for a village-level report
+    PDF/XLSX instead of the CSV browser.
 
 ## Plan (phases, do in order, each independently shippable)
 
